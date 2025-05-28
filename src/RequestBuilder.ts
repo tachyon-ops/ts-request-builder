@@ -19,13 +19,19 @@ export enum HTTPMethod {
   TRACE = 'TRACE',
 }
 
-type ErrorHandlerType<T = any> = (
+// A union type to represent possible error payloads passed to the handler
+export type RequestError =
+  | Error // standard error
+  | Response // the Response object for advanced handling
+  | unknown; // anything else (json, text, etc)
+
+type ErrorHandlerType<T = RequestError> = (
   error: T,
   status?: number,
   statusText?: string
 ) => void;
 
-export class RequestBuilder {
+export class RequestBuilder<TError = RequestError> {
   private route = '';
 
   private body: Record<string, unknown> | null = null;
@@ -38,7 +44,7 @@ export class RequestBuilder {
 
   private mode: RequestMode | null = null;
 
-  private errorHandling: ErrorHandlerType<any> | null = null;
+  private errorHandling: ErrorHandlerType<TError> | null = null;
 
   private timeout: number = DEFAULT_TIMEOUT;
 
@@ -46,12 +52,15 @@ export class RequestBuilder {
 
   private credentials?: RequestCredentials | undefined;
 
-  constructor(route: string, private debug = false) {
+  constructor(
+    route: string,
+    private debug = false
+  ) {
     this.route = route;
     return this;
   }
 
-  withErrorHandling<T>(callback: ErrorHandlerType<T>) {
+  withErrorHandling(callback: ErrorHandlerType<TError>) {
     this.errorHandling = callback;
     return this;
   }
@@ -61,7 +70,7 @@ export class RequestBuilder {
     return this;
   }
 
-  withPlainBody(body: string = '') {
+  withPlainBody(body = '') {
     this.plainBody = body;
     return this;
   }
@@ -130,27 +139,37 @@ export class RequestBuilder {
 
   async build<T>(): Promise<T> {
     try {
-      let result: T;
       const res = await this.request();
+      let result: T;
       const contentType = res.headers.get('content-type');
-      if (contentType && contentType.indexOf('application/json') !== -1)
-        result = await res.json();
-      else result = ((await res.text()) as unknown) as T;
 
-      if (this.debug)
+      if (contentType?.includes('application/json')) {
+        result = await res.json();
+      } else {
+        result = (await res.text()) as unknown as T;
+      }
+
+      if (this.debug) {
         // eslint-disable-next-line no-console
         console.log(
           'request yielded: ',
           result,
-          ' was it successfull? ',
+          ' success? ',
           res.ok ? 'yes' : 'no'
         );
+      }
 
-      if (!res.ok && this.errorHandling)
-        this.errorHandling(result, res.status, res.statusText);
+      if (!res.ok && this.errorHandling) {
+        this.errorHandling(
+          result as unknown as TError,
+          res.status,
+          res.statusText
+        );
+      }
+
       return result as T;
     } catch (e) {
-      if (this.errorHandling) this.errorHandling(e);
+      if (this.errorHandling) this.errorHandling(e as TError);
       throw e;
     }
   }
@@ -159,20 +178,22 @@ export class RequestBuilder {
     try {
       const res = await this.request();
       const result = await res.json();
-      if (this.debug)
+
+      if (this.debug) {
         // eslint-disable-next-line no-console
         console.log(
-          'request yielded json: ',
+          'request yielded: ',
           result,
-          ' was it successfull? ',
+          ' success? ',
           res.ok ? 'yes' : 'no'
         );
+      }
 
       if (!res.ok && this.errorHandling)
-        this.errorHandling(result, res.status, res.statusText);
+        this.errorHandling(result as TError, res.status, res.statusText);
       return result as T;
     } catch (e) {
-      if (this.errorHandling) this.errorHandling(e);
+      if (this.errorHandling) this.errorHandling(e as TError);
       throw e;
     }
   }
@@ -181,20 +202,26 @@ export class RequestBuilder {
     try {
       const res = await this.request();
       const result = await res.text();
-      if (this.debug)
+
+      if (this.debug) {
         // eslint-disable-next-line no-console
         console.log(
-          'request yielded text: ',
+          'request yielded: ',
           result,
-          ' was it successfull? ',
+          ' success? ',
           res.ok ? 'yes' : 'no'
         );
+      }
 
       if (!res.ok && this.errorHandling)
-        this.errorHandling(result, res.status, res.statusText);
+        this.errorHandling(
+          result as unknown as TError,
+          res.status,
+          res.statusText
+        );
       return result;
     } catch (e) {
-      if (this.errorHandling) this.errorHandling(e);
+      if (this.errorHandling) this.errorHandling(e as TError);
       throw e;
     }
   }
@@ -203,20 +230,26 @@ export class RequestBuilder {
     try {
       const res = await this.request();
       const blob = await res.blob();
-      if (this.debug)
+
+      if (this.debug) {
         // eslint-disable-next-line no-console
         console.log(
-          'request yielded blob: ',
+          'request yielded: ',
           blob,
-          ' was it successfull? ',
+          ' success? ',
           res.ok ? 'yes' : 'no'
         );
+      }
 
       if (!res.ok && this.errorHandling)
-        this.errorHandling(res, res.status, res.statusText);
+        this.errorHandling(
+          res as unknown as TError,
+          res.status,
+          res.statusText
+        );
       return blob;
     } catch (e) {
-      if (this.errorHandling) this.errorHandling(e);
+      if (this.errorHandling) this.errorHandling(e as TError);
       throw e;
     }
   }

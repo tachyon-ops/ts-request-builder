@@ -21,6 +21,7 @@
   "homepage": "https://github.com/tachyon-ops/ts-request-builder#readme",
   "license": "MIT",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "types": "lib/index.d.ts",
   "private": false,
   "directories": {
