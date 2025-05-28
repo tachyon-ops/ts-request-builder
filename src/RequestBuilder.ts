@@ -19,13 +19,13 @@ export enum HTTPMethod {
   TRACE = 'TRACE',
 }
 
-type ErrorHandlerType<TError extends Error> = (
-  error: TError,
+type ErrorHandlerType<T extends Error> = (
+  error: T,
   status?: number,
   statusText?: string
 ) => void;
 
-export class RequestBuilder<TError extends Error = Error> {
+export class RequestBuilder {
   private route = '';
 
   private body: Record<string, unknown> | null = null;
@@ -38,7 +38,7 @@ export class RequestBuilder<TError extends Error = Error> {
 
   private mode: RequestMode | null = null;
 
-  private errorHandling: ErrorHandlerType<TError> | null = null;
+  private errorHandling: ErrorHandlerType<Error> | null = null;
 
   private timeout: number = DEFAULT_TIMEOUT;
 
@@ -54,8 +54,8 @@ export class RequestBuilder<TError extends Error = Error> {
     return this;
   }
 
-  withErrorHandling(callback: ErrorHandlerType<TError>) {
-    this.errorHandling = callback;
+  withErrorHandling<T extends Error>(callback: ErrorHandlerType<T>) {
+    this.errorHandling = callback as ErrorHandlerType<Error>;
     return this;
   }
 
@@ -156,7 +156,7 @@ export class RequestBuilder<TError extends Error = Error> {
 
       if (!res.ok && this.errorHandling) {
         this.errorHandling(
-          result as unknown as TError,
+          result as unknown as Error,
           res.status,
           res.statusText
         );
@@ -165,7 +165,7 @@ export class RequestBuilder<TError extends Error = Error> {
       return result as T;
     } catch (e) {
       if (this.errorHandling) {
-        this.errorHandling(e as TError, undefined, undefined);
+        this.errorHandling(e as Error, undefined, undefined);
       }
       throw e;
     }
@@ -187,11 +187,11 @@ export class RequestBuilder<TError extends Error = Error> {
       }
 
       if (!res.ok && this.errorHandling)
-        this.errorHandling(result as TError, res.status, res.statusText);
+        this.errorHandling(result as Error, res.status, res.statusText);
       return result as T;
     } catch (e) {
       if (this.errorHandling) {
-        this.errorHandling(e as TError, undefined, undefined);
+        this.errorHandling(e as Error, undefined, undefined);
       }
       throw e;
     }
@@ -214,14 +214,14 @@ export class RequestBuilder<TError extends Error = Error> {
 
       if (!res.ok && this.errorHandling)
         this.errorHandling(
-          result as unknown as TError,
+          result as unknown as Error,
           res.status,
           res.statusText
         );
       return result;
     } catch (e) {
       if (this.errorHandling) {
-        this.errorHandling(e as TError, undefined, undefined);
+        this.errorHandling(e as Error, undefined, undefined);
       }
       throw e;
     }
@@ -243,15 +243,11 @@ export class RequestBuilder<TError extends Error = Error> {
       }
 
       if (!res.ok && this.errorHandling)
-        this.errorHandling(
-          res as unknown as TError,
-          res.status,
-          res.statusText
-        );
+        this.errorHandling(res as unknown as Error, res.status, res.statusText);
       return blob;
     } catch (e) {
       if (this.errorHandling) {
-        this.errorHandling(e as TError, undefined, undefined);
+        this.errorHandling(e as Error, undefined, undefined);
       }
       throw e;
     }
