@@ -19,19 +19,13 @@ export enum HTTPMethod {
   TRACE = 'TRACE',
 }
 
-// A union type to represent possible error payloads passed to the handler
-export type RequestError =
-  | Error // standard error
-  | Response // the Response object for advanced handling
-  | unknown; // anything else (json, text, etc)
-
-type ErrorHandlerType<T = RequestError> = (
-  error: T,
+type ErrorHandlerType<TError extends Error> = (
+  error: TError,
   status?: number,
   statusText?: string
 ) => void;
 
-export class RequestBuilder<TError = RequestError> {
+export class RequestBuilder<TError extends Error = Error> {
   private route = '';
 
   private body: Record<string, unknown> | null = null;
@@ -132,8 +126,9 @@ export class RequestBuilder<TError = RequestError> {
       this.method !== HTTPMethod.GET &&
       this.method !== HTTPMethod.HEAD &&
       (this.body || this.plainBody)
-    )
+    ) {
       opts.body = this.body ? JSON.stringify(this.body) : this.plainBody || '';
+    }
     return fetchWithTimeout(this.route, opts, this.timeout);
   }
 
