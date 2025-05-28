@@ -169,7 +169,9 @@ export class RequestBuilder<TError = RequestError> {
 
       return result as T;
     } catch (e) {
-      if (this.errorHandling) this.errorHandling(e as TError);
+      if (this.errorHandling) {
+        this.errorHandling(e as TError, undefined, undefined);
+      }
       throw e;
     }
   }
@@ -193,7 +195,9 @@ export class RequestBuilder<TError = RequestError> {
         this.errorHandling(result as TError, res.status, res.statusText);
       return result as T;
     } catch (e) {
-      if (this.errorHandling) this.errorHandling(e as TError);
+      if (this.errorHandling) {
+        this.errorHandling(e as TError, undefined, undefined);
+      }
       throw e;
     }
   }
@@ -221,7 +225,9 @@ export class RequestBuilder<TError = RequestError> {
         );
       return result;
     } catch (e) {
-      if (this.errorHandling) this.errorHandling(e as TError);
+      if (this.errorHandling) {
+        this.errorHandling(e as TError, undefined, undefined);
+      }
       throw e;
     }
   }
@@ -249,7 +255,9 @@ export class RequestBuilder<TError = RequestError> {
         );
       return blob;
     } catch (e) {
-      if (this.errorHandling) this.errorHandling(e as TError);
+      if (this.errorHandling) {
+        this.errorHandling(e as TError, undefined, undefined);
+      }
       throw e;
     }
   }

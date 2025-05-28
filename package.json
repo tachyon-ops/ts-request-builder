@@ -1,6 +1,6 @@
 {
   "name": "ts-request-builder",
-  "version": "0.1.2",
+  "version": "0.2.0-rc2",
   "description": "Make your requests and life easier",
   "author": "Nuno Ribeiro <me@nuuno.art>",
   "keywords": [
