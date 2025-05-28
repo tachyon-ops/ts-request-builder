@@ -1,84 +1,54 @@
 {
   "name": "ts-request-builder",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Make your requests and life easier",
-  "author": "TachyonVFX, LDA <info@tachyonvfx.com>",
+  "author": "Nuno Ribeiro <me@nuuno.art>",
   "keywords": [
-    "react",
-    "javascript",
     "typescript",
-    "redux",
-    "redux-thunk",
-    "thunk",
-    "automate",
-    "simplify"
+    "request",
+    "api",
+    "builder",
+    "http",
+    "utility"
   ],
   "repository": {
     "type": "git",
-    "url": "git@github.com:nmpribeiro/ts-request-builder.git"
+    "url": "git+https://github.com/tachyon-ops/ts-request-builder.git"
   },
   "bugs": {
-    "url": "https://github.com/nmpribeiro/ts-request-builder"
+    "url": "https://github.com/tachyon-ops/ts-request-builder/issues"
   },
-  "homepage": "https://github.com/nmpribeiro/ts-request-builder/blob/master/README.md",
+  "homepage": "https://github.com/tachyon-ops/ts-request-builder#readme",
   "license": "MIT",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "types": "lib/index.d.ts",
   "private": false,
   "directories": {
     "lib": "lib"
   },
   "files": [
-    "lib",
-    "src"
+    "lib"
   ],
-  "devDependencies": {
-    "@testing-library/jest-dom": "^4.2.4",
-    "@testing-library/react": "^9.3.2",
-    "@testing-library/user-event": "^7.1.2",
-    "@types/jest": "^24.0.0",
-    "@types/node": "^12.0.0",
-    "@types/react": "^16.9.0",
-    "@types/react-dom": "^16.9.0",
-    "copyfiles": "^2.3.0",
-    "eslint-config-airbnb": "^18.2.0",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-prettier": "^3.1.4",
-    "prettier": "^2.0.5",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-scripts": "3.4.1",
-    "tsc": "^2.0.3",
-    "typescript": "~3.7.2"
-  },
   "scripts": {
-    "start": "react-scripts start",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "lint": "eslint './src/**/*.{js,jsx,ts,tsx}'",
-    "lint:fix": "eslint --fix './src/**/*.{js,jsx,ts,tsx}'",
-    "clean": "rm -rf ./lib",
-    "prebuild": "yarn clean",
-    "build": "tsc --build \"./tsconfig.json\"",
-    "copy-files": "copyfiles -u 1 src/style/base.css lib/",
-    "postbuild": "yarn run copy-files"
+    "clean": "rm -rf lib",
+    "build": "tsup src/index.ts --dts --format esm,cjs --out-dir lib",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "test": "vitest run"
   },
-  "eslintConfig": {
-    "extends": "react-app"
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/ui": "^3.1.4",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.4.3",
+    "vitest": "^3.1.4"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "peerDependencies": {
-    "react": "*"
+  "engines": {
+    "node": ">=18"
   }
 }
