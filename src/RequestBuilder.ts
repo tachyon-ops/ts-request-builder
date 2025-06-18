@@ -46,6 +46,8 @@ export class RequestBuilder {
 
   private credentials?: RequestCredentials | undefined;
 
+  private formData: FormData | null = null;
+
   constructor(
     route: string,
     private debug = false
@@ -66,6 +68,11 @@ export class RequestBuilder {
 
   withPlainBody(body = '') {
     this.plainBody = body;
+    return this;
+  }
+
+  withFormData(formData: FormData) {
+    this.formData = formData;
     return this;
   }
 
@@ -125,9 +132,17 @@ export class RequestBuilder {
     if (
       this.method !== HTTPMethod.GET &&
       this.method !== HTTPMethod.HEAD &&
-      (this.body || this.plainBody)
+      (this.body || this.plainBody || this.formData)
     ) {
-      opts.body = this.body ? JSON.stringify(this.body) : this.plainBody || '';
+      if (this.formData) {
+        opts.body = this.formData;
+        // Do not set 'Content-Type' manually; browser will add correct boundary
+        this.headers.delete('Content-Type');
+      } else {
+        opts.body = this.body
+          ? JSON.stringify(this.body)
+          : this.plainBody || '';
+      }
     }
     return fetchWithTimeout(this.route, opts, this.timeout);
   }
