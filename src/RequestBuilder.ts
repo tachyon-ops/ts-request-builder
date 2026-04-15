@@ -23,7 +23,7 @@ type ErrorHandlerType<T extends Error> = (
   error: T,
   status?: number,
   statusText?: string
-) => void;
+) => void | Promise<void>;
 
 export class RequestBuilder {
   private route = '';
@@ -148,9 +148,18 @@ export class RequestBuilder {
   }
 
   async build<T>(): Promise<T> {
+    let res: Response;
     try {
-      const res = await this.request();
-      let result: T;
+      res = await this.request();
+    } catch (e) {
+      if (this.errorHandling) {
+        await this.errorHandling(e as Error, undefined, undefined);
+      }
+      throw e;
+    }
+
+    let result: T;
+    try {
       const contentType = res.headers.get('content-type');
 
       if (contentType?.includes('application/json')) {
@@ -158,113 +167,146 @@ export class RequestBuilder {
       } else {
         result = (await res.text()) as unknown as T;
       }
-
-      if (this.debug) {
-        // eslint-disable-next-line no-console
-        console.log(
-          'request yielded: ',
-          result,
-          ' success? ',
-          res.ok ? 'yes' : 'no'
-        );
-      }
-
-      if (!res.ok && this.errorHandling) {
-        this.errorHandling(
-          result as unknown as Error,
-          res.status,
-          res.statusText
-        );
-      }
-
-      return result as T;
     } catch (e) {
       if (this.errorHandling) {
-        this.errorHandling(e as Error, undefined, undefined);
+        await this.errorHandling(e as Error, res.status, res.statusText);
       }
       throw e;
     }
+
+    if (this.debug) {
+      // eslint-disable-next-line no-console
+      console.log(
+        'request yielded: ',
+        result,
+        ' success? ',
+        res.ok ? 'yes' : 'no'
+      );
+    }
+
+    if (!res.ok && this.errorHandling) {
+      await this.errorHandling(
+        result as unknown as Error,
+        res.status,
+        res.statusText
+      );
+    }
+
+    return result as T;
   }
 
   async buildAsJson<T>(): Promise<T> {
+    let res: Response;
     try {
-      const res = await this.request();
-      const result = await res.json();
-
-      if (this.debug) {
-        // eslint-disable-next-line no-console
-        console.log(
-          'request yielded: ',
-          result,
-          ' success? ',
-          res.ok ? 'yes' : 'no'
-        );
-      }
-
-      if (!res.ok && this.errorHandling)
-        this.errorHandling(result as Error, res.status, res.statusText);
-      return result as T;
+      res = await this.request();
     } catch (e) {
       if (this.errorHandling) {
-        this.errorHandling(e as Error, undefined, undefined);
+        await this.errorHandling(e as Error, undefined, undefined);
       }
       throw e;
     }
+
+    let result;
+    try {
+      result = await res.json();
+    } catch (e) {
+      if (this.errorHandling) {
+        await this.errorHandling(e as Error, res.status, res.statusText);
+      }
+      throw e;
+    }
+
+    if (this.debug) {
+      // eslint-disable-next-line no-console
+      console.log(
+        'request yielded: ',
+        result,
+        ' success? ',
+        res.ok ? 'yes' : 'no'
+      );
+    }
+
+    if (!res.ok && this.errorHandling) {
+      await this.errorHandling(result as Error, res.status, res.statusText);
+    }
+    return result as T;
   }
 
   async buildAsText(): Promise<string> {
+    let res: Response;
     try {
-      const res = await this.request();
-      const result = await res.text();
-
-      if (this.debug) {
-        // eslint-disable-next-line no-console
-        console.log(
-          'request yielded: ',
-          result,
-          ' success? ',
-          res.ok ? 'yes' : 'no'
-        );
-      }
-
-      if (!res.ok && this.errorHandling)
-        this.errorHandling(
-          result as unknown as Error,
-          res.status,
-          res.statusText
-        );
-      return result;
+      res = await this.request();
     } catch (e) {
       if (this.errorHandling) {
-        this.errorHandling(e as Error, undefined, undefined);
+        await this.errorHandling(e as Error, undefined, undefined);
       }
       throw e;
     }
+
+    let result;
+    try {
+      result = await res.text();
+    } catch (e) {
+      if (this.errorHandling) {
+        await this.errorHandling(e as Error, res.status, res.statusText);
+      }
+      throw e;
+    }
+
+    if (this.debug) {
+      // eslint-disable-next-line no-console
+      console.log(
+        'request yielded: ',
+        result,
+        ' success? ',
+        res.ok ? 'yes' : 'no'
+      );
+    }
+
+    if (!res.ok && this.errorHandling) {
+      await this.errorHandling(
+        result as unknown as Error,
+        res.status,
+        res.statusText
+      );
+    }
+    return result;
   }
 
-  async buildAsBlob() {
+  async buildAsBlob(): Promise<Blob> {
+    let res: Response;
     try {
-      const res = await this.request();
-      const blob = await res.blob();
-
-      if (this.debug) {
-        // eslint-disable-next-line no-console
-        console.log(
-          'request yielded: ',
-          blob,
-          ' success? ',
-          res.ok ? 'yes' : 'no'
-        );
-      }
-
-      if (!res.ok && this.errorHandling)
-        this.errorHandling(res as unknown as Error, res.status, res.statusText);
-      return blob;
+      res = await this.request();
     } catch (e) {
       if (this.errorHandling) {
-        this.errorHandling(e as Error, undefined, undefined);
+        await this.errorHandling(e as Error, undefined, undefined);
       }
       throw e;
     }
+
+    let blob;
+    try {
+      blob = await res.blob();
+    } catch (e) {
+      if (this.errorHandling) {
+        await this.errorHandling(e as Error, res.status, res.statusText);
+      }
+      throw e;
+    }
+
+    if (this.debug) {
+      // eslint-disable-next-line no-console
+      console.log(
+        'request yielded: ',
+        blob,
+        ' success? ',
+        res.ok ? 'yes' : 'no'
+      );
+    }
+
+    if (!res.ok && this.errorHandling) {
+      await this.errorHandling(res as unknown as Error, res.status, res.statusText);
+    }
+    return blob;
   }
 }
