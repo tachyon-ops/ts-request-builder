@@ -13,7 +13,66 @@ import { RequestBuilder } from 'ts-request-builder';
 
 ## Usage
 
-[] TODO
+`ts-request-builder` allows you to chain configuration methods to construct and execute HTTP requests seamlessly.
+
+### Basic Request
+```ts
+const data = await new RequestBuilder('/api/users')
+  .withMethod(HTTPMethod.GET)
+  .buildAsJson();
+```
+
+### Advanced Features
+
+**1. Query Parameters**
+Safely encode variables into the URL without manual string concatenation:
+```ts
+const movies = await new RequestBuilder('/api/movies')
+  .withQueryParam('genre', 'sci-fi')
+  .withQueryParam('page', 2)
+  .buildAsJson();
+```
+
+**2. Auto-Retries & Exponential Backoff**
+Automatically retry requests if the network drops or the server returns a 5xx gateway error. It uses exponential backoff:
+```ts
+const data = await new RequestBuilder('/api/sync')
+  .withRetries(3, 500) // max 3 retries, starting at 500ms delay
+  .buildAsJson();
+```
+
+**3. Token Refresh Interceptor**
+Provide an async callback that intercepts `401 Unauthorized` responses. The builder will pause the request, fire your callback (e.g. to fetch a new token), and automatically replay the request.
+```ts
+const data = await new RequestBuilder('/api/protected')
+  .withAuthRefreshInterceptor(async () => {
+    await fetchNewTokens(); // Implement your refresh logic here
+  })
+  .buildAsJson();
+```
+
+**4. Rich Error Handling**
+By default, failing HTTP statuses don't throw errors. You can force the builder to throw structured `HttpError` exceptions containing the `.status` and `.data`:
+```ts
+try {
+  await new RequestBuilder('/api')
+    .withThrowOnHttpError(true)
+    .buildAsJson();
+} catch (e) {
+  if (e instanceof HttpError) {
+    console.error(`Failed with status ${e.status}:`, e.data);
+  }
+}
+```
+
+**5. Full Response Details**
+If you need HTTP response headers (e.g., for pagination), use `.buildFullAsJson()` or `.buildFull()`:
+```ts
+const { data, status, headers } = await new RequestBuilder('/api/items')
+  .buildFullAsJson();
+  
+const totalItems = headers.get('X-Total-Count');
+```
 
 Have fun!
 
