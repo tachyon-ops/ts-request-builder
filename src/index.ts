@@ -1,5 +1,5 @@
 import { fetchWithTimeout } from './FetchWithTimeout';
 import { HeadersBuilder } from './HeadersBuilder';
-import { HTTPMethod, RequestBuilder } from './RequestBuilder';
+import { HTTPMethod, RequestBuilder, HttpError } from './RequestBuilder';
 
-export { fetchWithTimeout, RequestBuilder, HTTPMethod, HeadersBuilder };
+export { fetchWithTimeout, RequestBuilder, HTTPMethod, HeadersBuilder, HttpError };
