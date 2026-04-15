@@ -14,9 +14,12 @@ export enum HTTPMethod {
   // eslint-disable-next-line no-unused-vars
   HEAD = 'HEAD',
   // eslint-disable-next-line no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   CONNECT = 'CONNECT',
   // eslint-disable-next-line no-unused-vars
   TRACE = 'TRACE',
+  // eslint-disable-next-line no-unused-vars
+  OPTIONS = 'OPTIONS',
 }
 
 type ErrorHandlerType<T extends Error> = (
@@ -147,7 +150,7 @@ export class RequestBuilder {
     return fetchWithTimeout(this.route, opts, this.timeout);
   }
 
-  async build<T>(): Promise<T> {
+  private async executeRequest<T>(parser: 'json' | 'text' | 'blob' | 'auto'): Promise<T> {
     let res: Response;
     try {
       res = await this.request();
@@ -158,14 +161,27 @@ export class RequestBuilder {
       throw e;
     }
 
-    let result: T;
+    let result: unknown;
     try {
       const contentType = res.headers.get('content-type');
+      const isJsonContentType = contentType?.includes('application/json');
+      let effectiveParser = parser;
 
-      if (contentType?.includes('application/json')) {
+      // Smart parsing fallback for error responses
+      // If the request fails, servers often return HTML instead of JSON.
+      // Avoid masking the HTTP error with a JSON SyntaxError.
+      if (parser === 'auto') {
+        effectiveParser = isJsonContentType ? 'json' : 'text';
+      } else if (parser === 'json' && !res.ok && !isJsonContentType) {
+        effectiveParser = 'text';
+      }
+
+      if (effectiveParser === 'json') {
         result = await res.json();
+      } else if (effectiveParser === 'blob') {
+        result = await res.blob();
       } else {
-        result = (await res.text()) as unknown as T;
+        result = await res.text();
       }
     } catch (e) {
       if (this.errorHandling) {
@@ -193,120 +209,21 @@ export class RequestBuilder {
     }
 
     return result as T;
+  }
+
+  async build<T>(): Promise<T> {
+    return this.executeRequest<T>('auto');
   }
 
   async buildAsJson<T>(): Promise<T> {
-    let res: Response;
-    try {
-      res = await this.request();
-    } catch (e) {
-      if (this.errorHandling) {
-        await this.errorHandling(e as Error, undefined, undefined);
-      }
-      throw e;
-    }
-
-    let result;
-    try {
-      result = await res.json();
-    } catch (e) {
-      if (this.errorHandling) {
-        await this.errorHandling(e as Error, res.status, res.statusText);
-      }
-      throw e;
-    }
-
-    if (this.debug) {
-      // eslint-disable-next-line no-console
-      console.log(
-        'request yielded: ',
-        result,
-        ' success? ',
-        res.ok ? 'yes' : 'no'
-      );
-    }
-
-    if (!res.ok && this.errorHandling) {
-      await this.errorHandling(result as Error, res.status, res.statusText);
-    }
-    return result as T;
+    return this.executeRequest<T>('json');
   }
 
   async buildAsText(): Promise<string> {
-    let res: Response;
-    try {
-      res = await this.request();
-    } catch (e) {
-      if (this.errorHandling) {
-        await this.errorHandling(e as Error, undefined, undefined);
-      }
-      throw e;
-    }
-
-    let result;
-    try {
-      result = await res.text();
-    } catch (e) {
-      if (this.errorHandling) {
-        await this.errorHandling(e as Error, res.status, res.statusText);
-      }
-      throw e;
-    }
-
-    if (this.debug) {
-      // eslint-disable-next-line no-console
-      console.log(
-        'request yielded: ',
-        result,
-        ' success? ',
-        res.ok ? 'yes' : 'no'
-      );
-    }
-
-    if (!res.ok && this.errorHandling) {
-      await this.errorHandling(
-        result as unknown as Error,
-        res.status,
-        res.statusText
-      );
-    }
-    return result;
+    return this.executeRequest<string>('text');
   }
 
   async buildAsBlob(): Promise<Blob> {
-    let res: Response;
-    try {
-      res = await this.request();
-    } catch (e) {
-      if (this.errorHandling) {
-        await this.errorHandling(e as Error, undefined, undefined);
-      }
-      throw e;
-    }
-
-    let blob;
-    try {
-      blob = await res.blob();
-    } catch (e) {
-      if (this.errorHandling) {
-        await this.errorHandling(e as Error, res.status, res.statusText);
-      }
-      throw e;
-    }
-
-    if (this.debug) {
-      // eslint-disable-next-line no-console
-      console.log(
-        'request yielded: ',
-        blob,
-        ' success? ',
-        res.ok ? 'yes' : 'no'
-      );
-    }
-
-    if (!res.ok && this.errorHandling) {
-      await this.errorHandling(res as unknown as Error, res.status, res.statusText);
-    }
-    return blob;
+    return this.executeRequest<Blob>('blob');
   }
 }
